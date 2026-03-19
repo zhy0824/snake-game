@@ -363,7 +363,35 @@
     const downBtn = document.getElementById("downBtn");
     const leftBtn = document.getElementById("leftBtn");
     const rightBtn = document.getElementById("rightBtn");
+let audioCtx = null;
 
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+function playEatSound() {
+  if (!audioCtx) return;
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(720, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(980, audioCtx.currentTime + 0.08);
+
+  gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.18, audioCtx.currentTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.12);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.12);
+}
+    
     const GRID_COUNT = 20;
     const CELL = canvas.width / GRID_COUNT;
 
@@ -723,8 +751,13 @@
     leftBtn.addEventListener("click", () => setDirection({ x: -1, y: 0 }));
     rightBtn.addEventListener("click", () => setDirection({ x: 1, y: 0 }));
 
-    startBtn.addEventListener("click", startGame);
-    restartOverlayBtn.addEventListener("click", startGame);
+startBtn.addEventListener("click", () => {
+  initAudio();
+  startGame();
+});    restartOverlayBtn.addEventListener("click", () => {
+  initAudio();
+  startGame();
+});
 
     resetGame();
   </script>

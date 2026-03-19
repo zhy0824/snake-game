@@ -183,11 +183,29 @@
       box-shadow: 0 6px 12px rgba(0,0,0,0.22);
     }
 
-    .hint {
-      margin: 18px 0 0;
-      font-size: 14px;
-      color: var(--subtext);
-      line-height: 1.7;
+    .mobile-pad {
+      margin: 18px auto 0;
+      width: 220px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      user-select: none;
+    }
+
+    .mobile-pad .empty {
+      visibility: hidden;
+    }
+
+    .dir-btn {
+      width: 64px;
+      height: 64px;
+      padding: 0;
+      font-size: 28px;
+      font-weight: 800;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     @media (max-width: 640px) {
@@ -203,7 +221,7 @@
         font-size: 26px;
       }
 
-      button {
+      #startBtn {
         width: 180px;
         font-size: 18px;
         padding: 13px 18px;
@@ -237,10 +255,15 @@
         <button id="startBtn">开始 / 重开</button>
       </div>
 
-      <p class="hint">
-        电脑：方向键控制移动<br />
-        手机：在游戏区域内滑动控制方向
-      </p>
+      <div class="mobile-pad">
+        <div class="empty"></div>
+        <button class="dir-btn" id="upBtn">↑</button>
+        <div class="empty"></div>
+
+        <button class="dir-btn" id="leftBtn">←</button>
+        <button class="dir-btn" id="downBtn">↓</button>
+        <button class="dir-btn" id="rightBtn">→</button>
+      </div>
     </div>
   </div>
 
@@ -254,20 +277,22 @@
     const startBtn = document.getElementById("startBtn");
     const restartOverlayBtn = document.getElementById("restartOverlayBtn");
 
+    const upBtn = document.getElementById("upBtn");
+    const downBtn = document.getElementById("downBtn");
+    const leftBtn = document.getElementById("leftBtn");
+    const rightBtn = document.getElementById("rightBtn");
+
     const GRID_COUNT = 20;
     const CELL = canvas.width / GRID_COUNT;
 
     let snake = [];
     let direction = { x: 1, y: 0 };
     let nextDirection = { x: 1, y: 0 };
-    let peach = null;
+    let apple = null;
     let score = 0;
     let gameTimer = null;
     let running = false;
     let gameOver = false;
-
-    let touchStartX = 0;
-    let touchStartY = 0;
 
     function resetGame() {
       snake = [
@@ -279,7 +304,7 @@
 
       direction = { x: 1, y: 0 };
       nextDirection = { x: 1, y: 0 };
-      peach = getRandomPeachPosition();
+      apple = getRandomApplePosition();
       score = 0;
       running = false;
       gameOver = false;
@@ -313,7 +338,7 @@
       overlay.classList.add("show");
     }
 
-    function getRandomPeachPosition() {
+    function getRandomApplePosition() {
       while (true) {
         const p = {
           x: Math.floor(Math.random() * GRID_COUNT),
@@ -354,8 +379,8 @@
         return;
       }
 
-      const atePeach = newHead.x === peach.x && newHead.y === peach.y;
-      const bodyToCheck = atePeach ? snake : snake.slice(0, -1);
+      const ateApple = newHead.x === apple.x && newHead.y === apple.y;
+      const bodyToCheck = ateApple ? snake : snake.slice(0, -1);
 
       const hitSelf = bodyToCheck.some(seg => seg.x === newHead.x && seg.y === newHead.y);
       if (hitSelf) {
@@ -365,10 +390,10 @@
 
       snake.unshift(newHead);
 
-      if (atePeach) {
+      if (ateApple) {
         score += 1;
         scoreEl.textContent = score;
-        peach = getRandomPeachPosition();
+        apple = getRandomApplePosition();
       } else {
         snake.pop();
       }
@@ -378,7 +403,7 @@
 
     function drawScene() {
       drawBoard();
-      drawPeach(peach);
+      drawApple(apple);
       drawSnake();
     }
 
@@ -410,62 +435,52 @@
       ctx.restore();
     }
 
-    function drawPeachCell(peachCell) {
-      const cx = peachCell.x * CELL + CELL / 2;
-      const cy = peachCell.y * CELL + CELL / 2;
+    function drawApple(appleCell) {
+      if (!appleCell) return;
+
+      const cx = appleCell.x * CELL + CELL / 2;
+      const cy = appleCell.y * CELL + CELL / 2;
 
       ctx.save();
       ctx.translate(cx, cy);
 
-      const peachGrad = ctx.createRadialGradient(-6, -8, 4, 0, 0, 18);
-      peachGrad.addColorStop(0, "#ffd2c8");
-      peachGrad.addColorStop(0.42, "#ffb08b");
-      peachGrad.addColorStop(0.75, "#ff8b78");
-      peachGrad.addColorStop(1, "#eb6a72");
+      const appleGrad = ctx.createRadialGradient(-6, -8, 3, 0, 0, 18);
+      appleGrad.addColorStop(0, "#ffd1d1");
+      appleGrad.addColorStop(0.35, "#ff6b6b");
+      appleGrad.addColorStop(0.7, "#ef2f2f");
+      appleGrad.addColorStop(1, "#b30000");
 
-      ctx.fillStyle = peachGrad;
+      ctx.fillStyle = appleGrad;
 
       ctx.beginPath();
-      ctx.arc(-7, 2, 11, 0, Math.PI * 2);
-      ctx.arc(7, 2, 11, 0, Math.PI * 2);
+      ctx.arc(-6, 1, 10, 0, Math.PI * 2);
+      ctx.arc(6, 1, 10, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.beginPath();
-      ctx.moveTo(-16, 4);
-      ctx.quadraticCurveTo(0, 20, 16, 4);
-      ctx.quadraticCurveTo(0, 17, -16, 4);
+      ctx.moveTo(-14, 5);
+      ctx.quadraticCurveTo(0, 18, 14, 5);
+      ctx.quadraticCurveTo(0, 16, -14, 5);
       ctx.fill();
-
-      ctx.strokeStyle = "rgba(180, 70, 90, 0.45)";
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.moveTo(0, -7);
-      ctx.quadraticCurveTo(-1, 1, 0, 14);
-      ctx.stroke();
 
       ctx.strokeStyle = "#6f4c2f";
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(0, -11);
-      ctx.lineTo(1, -19);
+      ctx.moveTo(0, -10);
+      ctx.lineTo(1, -18);
       ctx.stroke();
 
-      ctx.fillStyle = "#4db36a";
+      ctx.fillStyle = "#45b85b";
       ctx.beginPath();
-      ctx.ellipse(9, -15, 8, 5, -0.45, 0, Math.PI * 2);
+      ctx.ellipse(8, -14, 8, 5, -0.5, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.fillStyle = "rgba(255,255,255,0.28)";
       ctx.beginPath();
-      ctx.ellipse(-7, -4, 4.5, 7, -0.25, 0, Math.PI * 2);
+      ctx.ellipse(-6, -3, 4, 6.5, -0.25, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.restore();
-    }
-
-    function drawPeach(peachCell) {
-      if (!peachCell) return;
-      drawPeachCell(peachCell);
     }
 
     function getCenter(seg) {
@@ -482,7 +497,6 @@
 
       ctx.save();
 
-      // 先画主体连接，让蛇更像一整条
       const bodyGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
       bodyGradient.addColorStop(0, "#9fd9ff");
       bodyGradient.addColorStop(0.35, "#5ab2ff");
@@ -501,7 +515,6 @@
       }
       ctx.stroke();
 
-      // 再画一节一节的身体
       for (let i = snake.length - 1; i >= 1; i--) {
         const p = points[i];
         const t = i / (snake.length - 1 || 1);
@@ -592,7 +605,6 @@
       ctx.ellipse(0, 0, CELL * 0.42, CELL * 0.34, 0, 0, Math.PI * 2);
       ctx.stroke();
 
-      // 眼睛
       ctx.fillStyle = "#ffffff";
       ctx.beginPath();
       ctx.arc(5, -5, 3.2, 0, Math.PI * 2);
@@ -605,7 +617,6 @@
       ctx.arc(6, 5, 1.6, 0, Math.PI * 2);
       ctx.fill();
 
-      // 鼻尖
       ctx.fillStyle = "rgba(255,255,255,0.18)";
       ctx.beginPath();
       ctx.arc(10, 0, 1.2, 0, Math.PI * 2);
@@ -621,27 +632,10 @@
       if (e.key === "ArrowRight") setDirection({ x: 1, y: 0 });
     });
 
-    canvas.addEventListener("touchstart", (e) => {
-      const touch = e.changedTouches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-    }, { passive: true });
-
-    canvas.addEventListener("touchend", (e) => {
-      const touch = e.changedTouches[0];
-      const dx = touch.clientX - touchStartX;
-      const dy = touch.clientY - touchStartY;
-
-      if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
-
-      if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 0) setDirection({ x: 1, y: 0 });
-        else setDirection({ x: -1, y: 0 });
-      } else {
-        if (dy > 0) setDirection({ x: 0, y: 1 });
-        else setDirection({ x: 0, y: -1 });
-      }
-    }, { passive: true });
+    upBtn.addEventListener("click", () => setDirection({ x: 0, y: -1 }));
+    downBtn.addEventListener("click", () => setDirection({ x: 0, y: 1 }));
+    leftBtn.addEventListener("click", () => setDirection({ x: -1, y: 0 }));
+    rightBtn.addEventListener("click", () => setDirection({ x: 1, y: 0 }));
 
     startBtn.addEventListener("click", startGame);
     restartOverlayBtn.addEventListener("click", startGame);
